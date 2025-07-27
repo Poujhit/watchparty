@@ -390,7 +390,7 @@ export class TopBar extends React.Component<{
                       marginLeft: 'auto',
                     }}
                   >
-                    Party
+                    {' ' + 'Party'}
                   </div>
                 </div>
               </a>
