@@ -107,14 +107,26 @@ export class LoginModal extends React.Component<{
 export class CreateModal extends React.Component<{
   closeModal: () => void;
 }> {
-  public state = { email: '', password: '', error: '' };
+  public state = {
+    email: '',
+    password: '',
+    error: '',
+    success: false,
+  };
 
   createAccount = async (email: string, password: string) => {
     try {
       await firebase.auth().createUserWithEmailAndPassword(email, password);
+      // Show success message first
+      this.setState({ success: true, error: '' });
+
+      // Close modal after showing success message
+      setTimeout(() => {
+        this.props.closeModal();
+      }, 2000);
     } catch (e: any) {
       // handle exceptions
-      this.setState({ error: e.message });
+      this.setState({ error: e.message, success: false });
     }
   };
 
@@ -127,33 +139,42 @@ export class CreateModal extends React.Component<{
           {this.state.error && (
             <Message color="red" header="Error" content={this.state.error} />
           )}
-          <Form>
-            <Form.Field>
-              <label>Email</label>
-              <input
-                placeholder="Email"
-                value={this.state.email}
-                onChange={(e) => this.setState({ email: e.target.value })}
-              />
-            </Form.Field>
-            <Form.Field>
-              <label>Password</label>
-              <input
-                type="password"
-                placeholder="Password"
-                value={this.state.password}
-                onChange={(e) => this.setState({ password: e.target.value })}
-              />
-            </Form.Field>
-            <Button
-              type="submit"
-              onClick={() =>
-                this.createAccount(this.state.email, this.state.password)
-              }
-            >
-              Create
-            </Button>
-          </Form>
+          {this.state.success && (
+            <Message
+              color="green"
+              header="Account Created Successfully!"
+              content="Welcome to WatchParty! You now have WatchParty Plus access with all premium features."
+            />
+          )}
+          {!this.state.success && (
+            <Form>
+              <Form.Field>
+                <label>Email</label>
+                <input
+                  placeholder="Email"
+                  value={this.state.email}
+                  onChange={(e) => this.setState({ email: e.target.value })}
+                />
+              </Form.Field>
+              <Form.Field>
+                <label>Password</label>
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={this.state.password}
+                  onChange={(e) => this.setState({ password: e.target.value })}
+                />
+              </Form.Field>
+              <Button
+                type="submit"
+                onClick={() =>
+                  this.createAccount(this.state.email, this.state.password)
+                }
+              >
+                Create
+              </Button>
+            </Form>
+          )}
         </Modal.Content>
       </Modal>
     );

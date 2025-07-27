@@ -309,7 +309,11 @@ export class VideoChat extends React.Component<VideoChatProps> {
                     <UserMenu
                       displayName={nameMap[p.id] || p.id}
                       disabled={
-                        !Boolean(owner && owner === this.context.user?.uid)
+                        !Boolean(
+                          owner &&
+                            this.context.user &&
+                            owner === this.context.user.uid,
+                        )
                       }
                       position={'left center'}
                       socket={socket}
@@ -325,7 +329,9 @@ export class VideoChat extends React.Component<VideoChatProps> {
                             cursor: 'pointer',
                             opacity: 0.75,
                             visibility: Boolean(
-                              owner && owner === this.context.user?.uid,
+                              owner &&
+                                this.context.user &&
+                                owner === this.context.user.uid,
                             )
                               ? 'visible'
                               : 'hidden',

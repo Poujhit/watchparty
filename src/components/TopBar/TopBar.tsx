@@ -137,18 +137,18 @@ export class SignInButton extends React.Component<SignInButtonProps> {
     }
     const enabledOptions = config.VITE_FIREBASE_SIGNIN_METHODS.split(',');
     const components: Record<string, JSX.Element> = {
-      facebook: (
-        <Dropdown.Item onClick={this.facebookSignIn}>
-          <Icon name="facebook" />
-          Facebook
-        </Dropdown.Item>
-      ),
-      google: (
-        <Dropdown.Item onClick={this.googleSignIn}>
-          <Icon name="google" />
-          Google
-        </Dropdown.Item>
-      ),
+      // facebook: (
+      //   <Dropdown.Item onClick={this.facebookSignIn}>
+      //     <Icon name="facebook" />
+      //     Facebook
+      //   </Dropdown.Item>
+      // ),
+      // google: (
+      //   <Dropdown.Item onClick={this.googleSignIn}>
+      //     <Icon name="google" />
+      //     Google
+      //   </Dropdown.Item>
+      // ),
       email: (
         <Dropdown.Item onClick={() => this.setState({ isLoginOpen: true })}>
           <Icon name="mail" />
