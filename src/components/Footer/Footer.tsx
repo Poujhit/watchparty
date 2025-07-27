@@ -26,6 +26,6 @@ export const Footer = () => (
       Discord Bot
     </Link> */}
     {/* {' · '} */}
-    <span>Poujhit</span>
+    {/* <span></span> */}
   </div>
 );
