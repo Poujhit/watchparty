@@ -22,10 +22,10 @@ export const Footer = () => (
       FAQ
     </Link>
     {' · '}
-    <Link style={{ color: 'white' }} to="/discordBot">
+    {/* <Link style={{ color: 'white' }} to="/discordBot">
       Discord Bot
-    </Link>
-    {' · '}
-    <span>Gravitech LLC</span>
+    </Link> */}
+    {/* {' · '} */}
+    <span>Poujhit</span>
   </div>
 );

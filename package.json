@@ -5,6 +5,8 @@
   "dependencies": {
     "@emoji-mart/data": "^1.1.2",
     "@emoji-mart/react": "^1.1.1",
+    "@giphy/js-fetch-api": "^5.7.0",
+    "@giphy/react-components": "^10.1.0",
     "@googleapis/youtube": "^8.0.2",
     "@stripe/stripe-js": "^1.54.2",
     "axios": "^1.6.5",

@@ -413,7 +413,7 @@ export class TopBar extends React.Component<{
                 justifyContent: 'center',
               }}
             >
-              <a
+              {/* <a
                 href="https://discord.gg/3rYj5HV"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -421,8 +421,8 @@ export class TopBar extends React.Component<{
                 title="Discord"
               >
                 <Icon name="discord" size="big" link />
-              </a>
-              <a
+              </a> */}
+              {/* <a
                 href="https://github.com/howardchung/watchparty"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -430,14 +430,14 @@ export class TopBar extends React.Component<{
                 title="GitHub"
               >
                 <Icon name="github" size="big" link />
-              </a>
+              </a> */}
             </div>
             {this.props.showInviteButton && <InviteButton />}
             {!this.props.hideNewRoom && <NewRoomButton openNewTab />}
             {!this.props.hideMyRooms && this.context.user && (
               <ListRoomsButton />
             )}
-            {subscribeButton}
+            {/* {subscribeButton} */}
             {!this.props.hideSignin && <SignInButton />}
           </div>
         </div>

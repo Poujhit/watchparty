@@ -3,6 +3,8 @@ import { Button, Comment, Form, Icon, Input, Popup } from 'semantic-ui-react';
 // import data from '@emoji-mart/data';
 import Picker from '@emoji-mart/react';
 import { init } from 'emoji-mart';
+import { GiphyFetch } from '@giphy/js-fetch-api';
+import { Grid } from '@giphy/react-components';
 // import onClickOutside from 'react-onclickoutside';
 //@ts-ignore
 import Linkify from 'react-linkify';
@@ -28,6 +30,9 @@ import {
 } from 'react-transition-group';
 import { MetadataContext } from '../../MetadataContext';
 
+// TODO: Replace with your Giphy API key
+const gf = new GiphyFetch('hfQQXlmO9MOs2uCMA4WPD2kf84KSAJnm');
+
 interface ChatProps {
   chat: ChatMessage[];
   nameMap: StringDict;
@@ -50,6 +55,8 @@ export class Chat extends React.Component<ChatProps> {
     chatMsg: '',
     isNearBottom: true,
     isPickerOpen: false,
+    isGifPickerOpen: false,
+    gifSearchQuery: '',
     reactionMenu: {
       isOpen: false,
       selectedMsgId: '',
@@ -211,6 +218,15 @@ export class Chat extends React.Component<ChatProps> {
     this.setState({ chatMsg: this.state.chatMsg + emoji.native });
   };
 
+  addGif = (gif: any) => {
+    const gifMarkdown = `![${gif.title}](${gif.images.downsized.url})`;
+    this.setState({ chatMsg: this.state.chatMsg + gifMarkdown });
+  };
+
+  updateGifSearchQuery = (_e: any, data: { value: string }) => {
+    this.setState({ gifSearchQuery: data.value });
+  };
+
   render() {
     return (
       <div
@@ -278,6 +294,67 @@ export class Chat extends React.Component<ChatProps> {
               onEmojiSelect={this.addEmoji}
               onClickOutside={() => this.setState({ isPickerOpen: false })}
             />
+          </div>
+        )}
+        {this.state.isGifPickerOpen && (
+          <div
+            style={{
+              position: 'fixed',
+              bottom: '60px',
+              height: '350px',
+              width: '300px',
+              backgroundColor: '#1b1c1d',
+              border: '1px solid #333',
+              borderRadius: '4px',
+              padding: '10px',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                marginBottom: '10px',
+                width: '100%',
+                justifyContent: 'space-between',
+              }}
+            >
+              <Input
+                fluid
+                placeholder="Search for GIFs..."
+                value={this.state.gifSearchQuery}
+                onChange={this.updateGifSearchQuery}
+                inverted
+                style={{ marginRight: '10px', width: '100%' }}
+              />
+              <Icon
+                name="close"
+                inverted
+                circular
+                link
+                onClick={() =>
+                  this.setState({ isGifPickerOpen: false, gifSearchQuery: '' })
+                }
+                style={{ opacity: 1 }}
+              />
+            </div>
+            <div style={{ height: '300px', overflow: 'auto' }}>
+              <Grid
+                onGifClick={(gif, e) => {
+                  e.preventDefault();
+                  this.addGif(gif);
+                  this.setState({ isGifPickerOpen: false, gifSearchQuery: '' });
+                }}
+                fetchGifs={() =>
+                  this.state.gifSearchQuery.trim()
+                    ? gf.search(this.state.gifSearchQuery, { limit: 20 })
+                    : gf.trending({ limit: 20 })
+                }
+                width={300}
+                columns={3}
+                gutter={6}
+                key={this.state.gifSearchQuery} // Force re-render when search changes
+              />
+            </div>
           </div>
         )}
         <CSSTransition
@@ -355,6 +432,17 @@ export class Chat extends React.Component<ChatProps> {
                 😀
               </span>
             </Icon>
+            <Icon
+              onClick={() =>
+                this.setState({ isGifPickerOpen: !this.state.isGifPickerOpen })
+              }
+              name="image"
+              inverted
+              circular
+              link
+              disabled={this.props.isChatDisabled}
+              style={{ opacity: 1 }}
+            />
             {/* <Icon onClick={this.sendChatMsg} name="send" inverted circular link /> */}
           </Input>
         </Form>
@@ -451,7 +539,7 @@ const ChatMessage = ({
               isEmojiString(msg) ? styles.emoji : ''
             }`}
           >
-            {!cmd && msg}
+            {!cmd && !msg?.startsWith('![') && msg}
           </Comment.Text>
         </Linkify>
         {msg?.startsWith('![') && (
@@ -459,7 +547,7 @@ const ChatMessage = ({
             children={msg}
             components={{
               img: ({ node, ...props }) => (
-                <img style={{ maxWidth: '100%' }} {...props} />
+                <img style={{ maxWidth: '300px' }} {...props} />
               ),
             }}
           />

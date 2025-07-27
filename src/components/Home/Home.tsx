@@ -12,8 +12,8 @@ export const Home = () => {
     <div>
       <div className={styles.container}>
         <Hero
-          heroText={'Watch videos together with friends anywhere.'}
-          subText={'No registration or download required.'}
+          heroText={'This is our SuRaPou-ttu watch party.'}
+          subText={'Neenga vandha mattum podhum'}
           action={
             <div style={{ marginTop: '8px', width: '300px' }}>
               <NewRoomButton size="huge" />
@@ -44,9 +44,9 @@ export const Home = () => {
             text="Set up a whole list of videos to play next, and rearrange to your heart's content."
           />
           <Feature
-            icon="video"
-            title="Video chat"
-            text="Jump into video chat if you'd rather be face-to-face."
+            icon="microphone"
+            title="Audio chat"
+            text="Jump into audio chat to talk with others while watching."
           />
         </div>
         <Hero
@@ -96,7 +96,7 @@ export const Home = () => {
           image={'/screenshot14.png'}
         />
         <Divider horizontal />
-        <div
+        {/* <div
           style={{
             padding: '30px',
             display: 'flex',
@@ -143,7 +143,7 @@ export const Home = () => {
           <div style={{ width: '160px' }}>
             <NewRoomButton />
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );

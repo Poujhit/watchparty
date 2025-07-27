@@ -69,69 +69,64 @@ export class VideoChat extends React.Component<VideoChatProps> {
   };
 
   setupWebRTC = async () => {
-    // Set up our own video
-    // Create default stream
-    let black = ({ width = 640, height = 480 } = {}) => {
-      let canvas: any = Object.assign(document.createElement('canvas'), {
-        width,
-        height,
-      });
-      canvas.getContext('2d')?.fillRect(0, 0, width, height);
-      let stream = canvas.captureStream();
-      return Object.assign(stream.getVideoTracks()[0], { enabled: false });
-    };
-    let stream = new MediaStream([black()]);
+    // Set up our own audio stream
+    let stream = new MediaStream();
 
     try {
+      // Request audio only
       stream = await navigator?.mediaDevices.getUserMedia({
         audio: true,
-        video: true,
+        video: false,
       });
     } catch (e) {
       console.warn(e);
-      try {
-        console.log('attempt audio only stream');
-        stream = await navigator?.mediaDevices?.getUserMedia({
-          audio: true,
-          video: false,
-        });
-      } catch (e) {
-        console.warn(e);
-      }
+      // If audio fails, create empty stream
+      stream = new MediaStream();
     }
     window.watchparty.ourStream = stream;
-    // alert server we've joined video chat
+
+    // alert server we've joined audio chat
     this.socket.emit('CMD:joinVideo');
     this.emitUserMute();
   };
 
   stopWebRTC = () => {
+    console.log('Stopping WebRTC audio chat...');
     const ourStream = window.watchparty.ourStream;
     const videoPCs = window.watchparty.videoPCs;
+    const videoRefs = window.watchparty.videoRefs;
+
+    // Stop all tracks
     ourStream &&
       ourStream.getTracks().forEach((track) => {
+        console.log('Stopping track:', track);
         track.stop();
       });
+
+    // Clear the global stream reference
     window.watchparty.ourStream = undefined;
+
+    // Close and remove all peer connections
     Object.keys(videoPCs).forEach((key) => {
+      console.log('Closing peer connection:', key);
       videoPCs[key].close();
       delete videoPCs[key];
     });
+
+    // Clear all video/audio element references
+    Object.keys(videoRefs).forEach((key) => {
+      if (videoRefs[key]) {
+        videoRefs[key].srcObject = null;
+      }
+    });
+
+    // Notify server we're leaving
     this.socket.emit('CMD:leaveVideo');
-  };
 
-  toggleVideoWebRTC = () => {
-    const ourStream = window.watchparty.ourStream;
-    if (ourStream && ourStream.getVideoTracks()[0]) {
-      ourStream.getVideoTracks()[0].enabled =
-        !ourStream.getVideoTracks()[0]?.enabled;
-    }
+    console.log('WebRTC cleanup complete');
+
+    // Force component to re-render to reflect the change
     this.forceUpdate();
-  };
-
-  getVideoWebRTC = () => {
-    const ourStream = window.watchparty.ourStream;
-    return ourStream && ourStream.getVideoTracks()[0]?.enabled;
   };
 
   toggleAudioWebRTC = () => {
@@ -158,7 +153,7 @@ export class VideoChat extends React.Component<VideoChatProps> {
     const videoPCs = window.watchparty.videoPCs;
     const videoRefs = window.watchparty.videoRefs;
     if (!ourStream) {
-      // We haven't started video chat, exit
+      // We haven't started audio chat, exit
       return;
     }
     const selfId = getOrCreateClientId();
@@ -180,16 +175,20 @@ export class VideoChat extends React.Component<VideoChatProps> {
     this.props.participants.forEach((user) => {
       const id = user.clientId;
       if (!user.isVideoChat || videoPCs[id]) {
-        // User isn't in video chat, or we already have a connection to them
+        // User isn't in audio chat, or we already have a connection to them
         return;
       }
       if (id === selfId) {
         videoPCs[id] = new RTCPeerConnection();
-        videoRefs[id].srcObject = ourStream;
+        // For audio-only, we'll use a hidden audio element
+        const element = videoRefs[id];
+        if (element && element.tagName === 'AUDIO') {
+          (element as HTMLAudioElement).srcObject = ourStream;
+        }
       } else {
         const pc = new RTCPeerConnection({ iceServers: iceServers() });
         videoPCs[id] = pc;
-        // Add our own video as outgoing stream
+        // Add our own audio as outgoing stream
         ourStream?.getTracks().forEach((track) => {
           if (ourStream) {
             pc.addTrack(track, ourStream);
@@ -203,14 +202,16 @@ export class VideoChat extends React.Component<VideoChatProps> {
         };
         pc.ontrack = (event: RTCTrackEvent) => {
           // Mount the stream from peer
-          // console.log(stream);
-          videoRefs[id].srcObject = event.streams[0];
+          const element = videoRefs[id];
+          if (element && element.tagName === 'AUDIO') {
+            (element as HTMLAudioElement).srcObject = event.streams[0];
+          }
         };
         // For each pair, have the lexicographically smaller ID be the offerer
         const isOfferer = selfId < id;
         if (isOfferer) {
           pc.onnegotiationneeded = async () => {
-            // Start connection for peer's video
+            // Start connection for peer's audio
             const offer = await pc.createOffer();
             await pc.setLocalDescription(offer);
             this.sendSignal(id, { sdp: pc.localDescription });
@@ -230,10 +231,11 @@ export class VideoChat extends React.Component<VideoChatProps> {
       this.props;
     const ourStream = window.watchparty.ourStream;
     const videoRefs = window.watchparty.videoRefs;
-    const videoChatContentStyle = {
+    const audioChatContentStyle = {
       height: participants.length <= 3 ? 200 : 100,
       borderRadius: '4px',
-      objectFit: 'contain' as any, // ObjectFit
+      objectFit: 'cover' as any,
+      border: '2px solid #555',
     };
     const selfId = getOrCreateClientId();
     return (
@@ -255,8 +257,8 @@ export class VideoChat extends React.Component<VideoChatProps> {
             labelPosition="left"
             onClick={this.setupWebRTC}
           >
-            <Icon name="video" />
-            {`Join Video`}
+            <Icon name="microphone" />
+            {`Join Audio Chat`}
           </Button>
         )}
         {ourStream && (
@@ -273,32 +275,18 @@ export class VideoChat extends React.Component<VideoChatProps> {
         )}
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           {ourStream && (
-            <>
-              <Button
-                color={this.getVideoWebRTC() ? 'green' : 'red'}
-                size="medium"
-                icon
-                labelPosition="left"
-                onClick={this.toggleVideoWebRTC}
-              >
-                <Icon name="video" />
-                {this.getVideoWebRTC() ? 'On' : 'Off'}
-              </Button>
-              <Button
-                color={this.getAudioWebRTC() ? 'green' : 'red'}
-                size="medium"
-                icon
-                labelPosition="left"
-                onClick={this.toggleAudioWebRTC}
-              >
-                <Icon
-                  name={
-                    this.getAudioWebRTC() ? 'microphone' : 'microphone slash'
-                  }
-                />
-                {this.getAudioWebRTC() ? 'On' : 'Off'}
-              </Button>
-            </>
+            <Button
+              color={this.getAudioWebRTC() ? 'green' : 'red'}
+              size="medium"
+              icon
+              labelPosition="left"
+              onClick={this.toggleAudioWebRTC}
+            >
+              <Icon
+                name={this.getAudioWebRTC() ? 'microphone' : 'microphone slash'}
+              />
+              {this.getAudioWebRTC() ? 'On' : 'Off'}
+            </Button>
           )}
         </div>
         <div
@@ -315,7 +303,6 @@ export class VideoChat extends React.Component<VideoChatProps> {
                 <div
                   style={{
                     position: 'relative',
-                    //marginLeft: '4px',
                   }}
                 >
                   <div>
@@ -347,27 +334,35 @@ export class VideoChat extends React.Component<VideoChatProps> {
                       }
                     />
                     {ourStream && p.isVideoChat ? (
-                      <video
-                        ref={(el) => {
-                          if (el) {
-                            videoRefs[p.clientId] = el;
+                      <div style={{ position: 'relative' }}>
+                        <audio
+                          ref={(el) => {
+                            if (el) {
+                              videoRefs[p.clientId] = el;
+                            }
+                          }}
+                          autoPlay
+                          muted={p.clientId === selfId}
+                          data-id={p.id}
+                        />
+                        <img
+                          style={{
+                            ...audioChatContentStyle,
+                            filter: p.isMuted ? 'grayscale(100%)' : 'none',
+                          }}
+                          src={
+                            pictureMap[p.id] ||
+                            getDefaultPicture(
+                              nameMap[p.id],
+                              getColorForStringHex(p.id),
+                            )
                           }
-                        }}
-                        style={{
-                          ...videoChatContentStyle,
-                          // mirror the video if it's our stream. this style mimics Zoom where your
-                          // video is mirrored only for you)
-                          transform: `scaleX(${
-                            p.clientId === selfId ? '-1' : '1'
-                          })`,
-                        }}
-                        autoPlay
-                        muted={p.clientId === selfId}
-                        data-id={p.id}
-                      />
+                          alt=""
+                        />
+                      </div>
                     ) : (
                       <img
-                        style={videoChatContentStyle}
+                        style={audioChatContentStyle}
                         src={
                           pictureMap[p.id] ||
                           getDefaultPicture(
@@ -407,7 +402,9 @@ export class VideoChat extends React.Component<VideoChatProps> {
                         {p.isScreenShare && (
                           <Icon size="small" name="slideshare" />
                         )}
-                        {p.isVideoChat && <Icon size="small" name="video" />}
+                        {p.isVideoChat && (
+                          <Icon size="small" name="microphone" />
+                        )}
                         {p.isMuted && (
                           <Icon
                             size="large"
