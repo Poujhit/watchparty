@@ -2520,7 +2520,7 @@ export default class App extends React.Component<AppProps, AppState> {
                 display: 'flex',
                 flexDirection: 'column',
                 position: 'relative',
-                width: this.state.showChatColumn ? 400 : 0,
+                width: this.state.showChatColumn ? 320 : 0,
               }}
               className={`${
                 (this.state.fullScreen
