@@ -29,8 +29,8 @@ export class FileShareModal extends React.Component<{
               <Table.Header>
                 <Table.Row>
                   <Table.HeaderCell />
-                  <Table.HeaderCell>WatchParty Free</Table.HeaderCell>
-                  <Table.HeaderCell>WatchParty Plus</Table.HeaderCell>
+                  <Table.HeaderCell>Normal</Table.HeaderCell>
+                  <Table.HeaderCell>Plus</Table.HeaderCell>
                 </Table.Row>
               </Table.Header>
 
@@ -41,7 +41,7 @@ export class FileShareModal extends React.Component<{
                     Stream your video to each viewer individually.
                   </Table.Cell>
                   <Table.Cell>
-                    Our relay server streams to viewers for you.
+                    Relay server streams to viewers for you.
                     <br />
                     Higher quality and lower bandwidth usage.
                   </Table.Cell>
@@ -74,19 +74,15 @@ export class FileShareModal extends React.Component<{
                     </Button>
                   </Table.Cell>
                   <Table.Cell>
-                    {this.context.isSubscriber ? (
-                      <Button
-                        color="orange"
-                        onClick={() => {
-                          this.props.startFileShare(true);
-                          this.props.closeModal();
-                        }}
-                      >
-                        Start Fileshare w/Relay
-                      </Button>
-                    ) : (
-                      subscribeButton
-                    )}
+                    <Button
+                      color="orange"
+                      onClick={() => {
+                        this.props.startFileShare(true);
+                        this.props.closeModal();
+                      }}
+                    >
+                      Start Fileshare w/Relay
+                    </Button>
                   </Table.Cell>
                 </Table.Row>
               </Table.Body>

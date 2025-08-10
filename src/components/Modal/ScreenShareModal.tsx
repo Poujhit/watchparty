@@ -1,7 +1,5 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import { Modal, Button, Table } from 'semantic-ui-react';
-import { SubscribeButton } from '../SubscribeButton/SubscribeButton';
-import { MetadataContext } from '../../MetadataContext';
 
 export const ScreenShareModal = ({
   closeModal,
@@ -10,8 +8,6 @@ export const ScreenShareModal = ({
   closeModal: () => void;
   startScreenShare: (useMediaSoup: boolean) => void;
 }) => {
-  const { isSubscriber } = useContext(MetadataContext);
-  const subscribeButton = <SubscribeButton />;
   return (
     <Modal open={true} onClose={closeModal}>
       <Modal.Header>Share Your Screen</Modal.Header>
@@ -29,8 +25,8 @@ export const ScreenShareModal = ({
             <Table.Header>
               <Table.Row>
                 <Table.HeaderCell />
-                <Table.HeaderCell>WatchParty Free</Table.HeaderCell>
-                <Table.HeaderCell>WatchParty Plus</Table.HeaderCell>
+                <Table.HeaderCell>Normal</Table.HeaderCell>
+                <Table.HeaderCell>Plus</Table.HeaderCell>
               </Table.Row>
             </Table.Header>
 
@@ -74,19 +70,15 @@ export const ScreenShareModal = ({
                   </Button>
                 </Table.Cell>
                 <Table.Cell>
-                  {isSubscriber ? (
-                    <Button
-                      color="orange"
-                      onClick={() => {
-                        startScreenShare(true);
-                        closeModal();
-                      }}
-                    >
-                      Start Screenshare w/Relay
-                    </Button>
-                  ) : (
-                    subscribeButton
-                  )}
+                  <Button
+                    color="orange"
+                    onClick={() => {
+                      startScreenShare(true);
+                      closeModal();
+                    }}
+                  >
+                    Start Screenshare w/Relay
+                  </Button>
                 </Table.Cell>
               </Table.Row>
             </Table.Body>
