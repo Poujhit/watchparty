@@ -2178,7 +2178,7 @@ export default class App extends React.Component<AppProps, AppState> {
                             }
                           />
                         )}
-                      {!this.localStreamToPublish &&
+                      {/* {!this.localStreamToPublish &&
                         !sharer &&
                         !this.playingVBrowser() && (
                           <Popup
@@ -2202,7 +2202,7 @@ export default class App extends React.Component<AppProps, AppState> {
                               </Button>
                             }
                           />
-                        )}
+                        )} */}
                       {this.playingVBrowser() && (
                         <>
                           <Popup
@@ -2439,7 +2439,7 @@ export default class App extends React.Component<AppProps, AppState> {
                       allowFullScreen
                       frameBorder="0"
                       allow="autoplay"
-                      src="https://www.youtube.com/embed/?enablejsapi=1&controls=0&rel=0"
+                      src="https://www.youtube.com/embed/?enablejsapi=1&controls=1&rel=0"
                     />
                     {this.playingVBrowser() &&
                     this.getVBrowserPass() &&
