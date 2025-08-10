@@ -1,6 +1,6 @@
 import React, { RefObject, useContext } from 'react';
 import { Button, Comment, Form, Icon, Input, Popup } from 'semantic-ui-react';
-// import data from '@emoji-mart/data';
+import data from '@emoji-mart/data';
 import Picker from '@emoji-mart/react';
 import { init } from 'emoji-mart';
 import { GiphyFetch } from '@giphy/js-fetch-api';
@@ -70,13 +70,14 @@ export class Chat extends React.Component<ChatProps> {
   async componentDidMount() {
     this.scrollToBottom();
     this.messagesRef.current?.addEventListener('scroll', this.onScroll);
-    init({});
+    init({ data });
   }
 
   componentDidUpdate(prevProps: ChatProps) {
     if (this.props.scrollTimestamp !== prevProps.scrollTimestamp) {
       if (prevProps.scrollTimestamp === 0 || this.state.isNearBottom) {
         this.scrollToBottom();
+        this.scrollToBottomWithImageLoad();
       }
     }
     if (this.props.hide !== prevProps.hide) {
@@ -156,6 +157,46 @@ export class Chat extends React.Component<ChatProps> {
     if (this.messagesRef.current) {
       this.messagesRef.current.scrollTop =
         this.messagesRef.current.scrollHeight;
+    }
+  };
+
+  scrollToBottomWithImageLoad = () => {
+    if (this.messagesRef.current) {
+      // First scroll immediately
+      this.messagesRef.current.scrollTop =
+        this.messagesRef.current.scrollHeight;
+
+      // Then wait for any images to load and scroll again
+      const images = this.messagesRef.current.querySelectorAll('img');
+      let loadedCount = 0;
+      const totalImages = images.length;
+
+      if (totalImages === 0) {
+        // No images, just scroll normally
+        return;
+      }
+
+      const checkAndScroll = () => {
+        loadedCount++;
+        if (loadedCount === totalImages) {
+          // All images loaded, scroll to bottom again
+          setTimeout(() => {
+            if (this.messagesRef.current) {
+              this.messagesRef.current.scrollTop =
+                this.messagesRef.current.scrollHeight;
+            }
+          }, 50);
+        }
+      };
+
+      images.forEach((img) => {
+        if (img.complete) {
+          checkAndScroll();
+        } else {
+          img.addEventListener('load', checkAndScroll);
+          img.addEventListener('error', checkAndScroll); // Handle broken images
+        }
+      });
     }
   };
 
@@ -286,13 +327,45 @@ export class Chat extends React.Component<ChatProps> {
         </div>
         <Separator />
         {this.state.isPickerOpen && (
-          <div style={{ position: 'absolute', bottom: '60px' }}>
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '60px',
+              zIndex: 1000,
+              maxHeight: '300px',
+              overflow: 'hidden',
+            }}
+          >
             <Picker
+              data={data}
               theme="dark"
               previewPosition="none"
-              maxFrequentRows={1}
+              maxFrequentRows={2}
+              perLine={8}
+              emojiSize={20}
+              emojiTooltip={true}
+              emojiButtonSize={30}
               onEmojiSelect={this.addEmoji}
               onClickOutside={() => this.setState({ isPickerOpen: false })}
+              set="native"
+              categories={[
+                'people',
+                'nature',
+                'foods',
+                'activity',
+                'places',
+                'objects',
+                'symbols',
+              ]}
+              categoriesIcons={{
+                people: { src: '😀' },
+                nature: { src: '🌿' },
+                foods: { src: '🍎' },
+                activity: { src: '⚽' },
+                places: { src: '🏠' },
+                objects: { src: '💡' },
+                symbols: { src: '❤️' },
+              }}
             />
           </div>
         )}
@@ -337,12 +410,33 @@ export class Chat extends React.Component<ChatProps> {
                 style={{ opacity: 1 }}
               />
             </div>
-            <div style={{ height: '300px', overflow: 'auto' }}>
+            <div
+              style={{
+                height: '300px',
+                overflow: 'auto',
+              }}
+            >
               <Grid
                 onGifClick={(gif, e) => {
                   e.preventDefault();
-                  this.addGif(gif);
-                  this.setState({ isGifPickerOpen: false, gifSearchQuery: '' });
+                  const gifMarkdown = `![${gif.title}](${gif.images.downsized.url})`;
+                  // If there's existing text, add the GIF and send, otherwise just send the GIF
+                  const finalMessage = this.state.chatMsg
+                    ? this.state.chatMsg + ' ' + gifMarkdown
+                    : gifMarkdown;
+                  this.setState(
+                    {
+                      chatMsg: finalMessage,
+                      isGifPickerOpen: false,
+                      gifSearchQuery: '',
+                    },
+                    () => {
+                      // Send the message after state is updated
+                      this.sendChatMsg();
+                      // Scroll to bottom after sending, accounting for image load
+                      setTimeout(() => this.scrollToBottomWithImageLoad(), 100);
+                    },
+                  );
                 }}
                 fetchGifs={() =>
                   this.state.gifSearchQuery.trim()
@@ -352,6 +446,8 @@ export class Chat extends React.Component<ChatProps> {
                 width={300}
                 columns={3}
                 gutter={6}
+                noLink={true}
+                hideAttribution={true}
                 key={this.state.gifSearchQuery} // Force re-render when search changes
               />
             </div>
@@ -379,6 +475,7 @@ export class Chat extends React.Component<ChatProps> {
             }}
           >
             <Picker
+              data={data}
               theme="dark"
               previewPosition="none"
               maxFrequentRows={1}
@@ -415,23 +512,25 @@ export class Chat extends React.Component<ChatProps> {
           >
             <input />
             <Icon
-              // style={{ right: '40px' }}
               onClick={() => {
                 // Add a delay to prevent the click from triggering onClickOutside
                 const curr = this.state.isPickerOpen;
                 setTimeout(() => this.setState({ isPickerOpen: !curr }), 100);
               }}
-              name={undefined}
+              name={'smile'}
               inverted
               circular
+              icon="smile"
               link
               disabled={this.props.isChatDisabled}
-              style={{ opacity: 1 }}
-            >
-              <span role="img" aria-label="Emoji">
-                😀
-              </span>
-            </Icon>
+              style={{
+                opacity: 1,
+                cursor: 'pointer',
+                marginRight: '32px',
+              }}
+              title="Add emoji"
+            />
+
             <Icon
               onClick={() =>
                 this.setState({ isGifPickerOpen: !this.state.isGifPickerOpen })
