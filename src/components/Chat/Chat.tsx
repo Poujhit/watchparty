@@ -161,42 +161,79 @@ export class Chat extends React.Component<ChatProps> {
   };
 
   scrollToBottomWithImageLoad = () => {
-    if (this.messagesRef.current) {
-      // First scroll immediately
-      this.messagesRef.current.scrollTop =
-        this.messagesRef.current.scrollHeight;
+    if (!this.messagesRef.current) {
+      return;
+    }
 
-      // Then wait for any images to load and scroll again
-      const images = this.messagesRef.current.querySelectorAll('img');
-      let loadedCount = 0;
-      const totalImages = images.length;
+    // First scroll immediately
+    this.messagesRef.current.scrollTop = this.messagesRef.current.scrollHeight;
 
-      if (totalImages === 0) {
-        // No images, just scroll normally
+    // Get all images in the chat
+    const images = this.messagesRef.current.querySelectorAll('img');
+
+    if (images.length === 0) {
+      // No images, we're done
+      return;
+    }
+
+    let loadedCount = 0;
+    const totalImages = images.length;
+    let hasScrolledFinal = false;
+
+    const performFinalScroll = () => {
+      if (hasScrolledFinal || !this.messagesRef.current) {
         return;
       }
+      hasScrolledFinal = true;
 
-      const checkAndScroll = () => {
-        loadedCount++;
-        if (loadedCount === totalImages) {
-          // All images loaded, scroll to bottom again
-          setTimeout(() => {
-            if (this.messagesRef.current) {
-              this.messagesRef.current.scrollTop =
-                this.messagesRef.current.scrollHeight;
-            }
-          }, 50);
-        }
-      };
-
-      images.forEach((img) => {
-        if (img.complete) {
-          checkAndScroll();
-        } else {
-          img.addEventListener('load', checkAndScroll);
-          img.addEventListener('error', checkAndScroll); // Handle broken images
+      // Use requestAnimationFrame for better timing
+      requestAnimationFrame(() => {
+        if (this.messagesRef.current) {
+          this.messagesRef.current.scrollTop =
+            this.messagesRef.current.scrollHeight;
         }
       });
+    };
+
+    const handleImageLoad = () => {
+      loadedCount++;
+      if (loadedCount >= totalImages) {
+        performFinalScroll();
+      }
+    };
+
+    // Set up a fallback timeout in case some images take too long
+    const fallbackTimeout = setTimeout(() => {
+      performFinalScroll();
+    }, 2000); // 2 second fallback
+
+    images.forEach((img) => {
+      if (img.complete && img.naturalWidth > 0) {
+        // Image is already loaded
+        handleImageLoad();
+      } else {
+        // Set up one-time event listeners
+        const onLoad = () => {
+          img.removeEventListener('load', onLoad);
+          img.removeEventListener('error', onError);
+          handleImageLoad();
+        };
+
+        const onError = () => {
+          img.removeEventListener('load', onLoad);
+          img.removeEventListener('error', onError);
+          handleImageLoad();
+        };
+
+        img.addEventListener('load', onLoad);
+        img.addEventListener('error', onError);
+      }
+    });
+
+    // Clean up the fallback timeout if we complete normally
+    if (loadedCount >= totalImages) {
+      clearTimeout(fallbackTimeout);
+      performFinalScroll();
     }
   };
 
@@ -375,7 +412,7 @@ export class Chat extends React.Component<ChatProps> {
               position: 'fixed',
               bottom: '60px',
               height: '350px',
-              width: '300px',
+              width: '280px',
               backgroundColor: '#1b1c1d',
               border: '1px solid #333',
               borderRadius: '4px',
@@ -434,7 +471,7 @@ export class Chat extends React.Component<ChatProps> {
                       // Send the message after state is updated
                       this.sendChatMsg();
                       // Scroll to bottom after sending, accounting for image load
-                      setTimeout(() => this.scrollToBottomWithImageLoad(), 100);
+                      setTimeout(() => this.scrollToBottomWithImageLoad());
                     },
                   );
                 }}
@@ -443,7 +480,7 @@ export class Chat extends React.Component<ChatProps> {
                     ? gf.search(this.state.gifSearchQuery, { limit: 20 })
                     : gf.trending({ limit: 20 })
                 }
-                width={300}
+                width={260}
                 columns={3}
                 gutter={6}
                 noLink={true}
@@ -646,7 +683,7 @@ const ChatMessage = ({
             children={msg}
             components={{
               img: ({ node, ...props }) => (
-                <img style={{ maxWidth: '300px' }} {...props} />
+                <img style={{ maxWidth: '280px', width: '100%' }} {...props} />
               ),
             }}
           />
