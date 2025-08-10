@@ -21,7 +21,7 @@ export const Footer = () => (
     <Link style={{ color: 'white' }} to="/faq">
       FAQ
     </Link>
-    {' · '}
+
     {/* <Link style={{ color: 'white' }} to="/discordBot">
       Discord Bot
     </Link> */}

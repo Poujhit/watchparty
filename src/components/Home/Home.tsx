@@ -49,13 +49,13 @@ export const Home = () => {
             text="Jump into audio chat to talk with others while watching."
           />
         </div>
-        <Hero
+        {/* <Hero
           heroText={'React to moments together.'}
           subText={"Find moments of shared joy even when you're apart."}
           image={'/screenshot18.png'}
           color="green"
-        />
-        <Divider horizontal>
+        /> */}
+        {/* <Divider horizontal>
           <Header inverted as="h4">
             <Icon name="film" />
             Watch anything together
@@ -87,7 +87,9 @@ export const Home = () => {
             title={`URL`}
             text="Paste in a video URL for everyone to watch from."
           />
-        </div>
+        </div> */}
+        <Divider horizontal />
+
         <Hero
           heroText={'Theater mode.'}
           subText={
@@ -95,7 +97,6 @@ export const Home = () => {
           }
           image={'/screenshot14.png'}
         />
-        <Divider horizontal />
         {/* <div
           style={{
             padding: '30px',
