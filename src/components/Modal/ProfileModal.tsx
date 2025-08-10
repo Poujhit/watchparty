@@ -169,7 +169,7 @@ export class ProfileModal extends React.Component<{
               gap: '10px',
             }}
           >
-            <Button
+            {/* <Button
               icon
               labelPosition="left"
               fluid
@@ -179,7 +179,7 @@ export class ProfileModal extends React.Component<{
             >
               <Icon name="image" />
               Edit Gravatar
-            </Button>
+            </Button> */}
             <Button
               disabled={
                 this.context.user?.emailVerified || this.state.verifyDisabled
@@ -193,8 +193,8 @@ export class ProfileModal extends React.Component<{
               <Icon name="check circle" />
               Verify Email
             </Button>
-            {this.context.isSubscriber && <ManageSubButton />}
-            {this.state.linkedDiscord ? (
+            {/* {this.context.isSubscriber && <ManageSubButton />} */}
+            {/* {this.state.linkedDiscord ? (
               <Button
                 icon
                 labelPosition="left"
@@ -225,7 +225,7 @@ export class ProfileModal extends React.Component<{
                   }
                 />
               </React.Fragment>
-            )}
+            )} */}
             <Button
               disabled={this.state.resetDisabled}
               icon
