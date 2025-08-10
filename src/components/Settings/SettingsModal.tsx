@@ -263,13 +263,13 @@ export const SettingsModal = ({
               name={`Set Custom Room URL`}
               description="Set a custom URL for this room. Inappropriate names may be revoked."
               checked={Boolean(roomLock)}
-              disabled={!isSubscriber}
+              disabled={false}
               subOnly={true}
               content={
                 <React.Fragment>
                   <Input
                     value={vanity ?? ''}
-                    disabled={!isSubscriber}
+                    disabled={false}
                     onChange={(e) => {
                       setAdminSettingsChanged(true);
                       checkValidVanity(e.target.value);
@@ -298,7 +298,7 @@ export const SettingsModal = ({
               icon={'pencil'}
               name={`Set Room Title, Description & Color`}
               description="Set the room title, description and title color to be displayed in the top bar."
-              disabled={!isSubscriber}
+              disabled={false}
               subOnly={true}
               content={
                 <React.Fragment>
@@ -306,7 +306,7 @@ export const SettingsModal = ({
                     <Input
                       style={{ marginRight: 3, flexGrow: 1 }}
                       value={roomTitleInput ?? roomTitle ?? ''}
-                      disabled={!isSubscriber}
+                      disabled={false}
                       maxLength={roomTitleMaxCharLength}
                       onChange={(e) => {
                         setAdminSettingsChanged(true);
@@ -350,7 +350,7 @@ export const SettingsModal = ({
                           color="teal"
                           size="tiny"
                           style={{ margin: 0 }}
-                          disabled={!isSubscriber}
+                          disabled={false}
                         >
                           <Icon name="paint brush" />
                         </Button>
@@ -360,7 +360,7 @@ export const SettingsModal = ({
                   <Input
                     style={{ marginBottom: 2 }}
                     value={roomDescriptionInput ?? roomDescription ?? ''}
-                    disabled={!isSubscriber}
+                    disabled={false}
                     maxLength={roomDescriptionMaxCharLength}
                     onChange={(e) => {
                       setAdminSettingsChanged(true);
@@ -475,11 +475,11 @@ const SettingRow = ({
                 {label}
               </Label>
             ) : null}
-            {subOnly ? (
+            {/* {subOnly ? (
               <Label size="mini" color="orange">
                 Subscriber only
               </Label>
-            ) : null}
+            ) : null} */}
           </div>
           {toggle && (
             <Radio
