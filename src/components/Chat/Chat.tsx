@@ -46,6 +46,13 @@ interface ChatProps {
   owner: string | undefined;
   ref: RefObject<Chat>;
   isLiveStream: boolean;
+  // Audio chat props
+  participants: User[];
+  tsMap: NumberDict;
+  setupWebRTC?: () => void;
+  stopWebRTC?: () => void;
+  getAudioWebRTC?: () => boolean;
+  toggleAudioWebRTC?: () => void;
 }
 
 export class Chat extends React.Component<ChatProps> {
@@ -305,6 +312,130 @@ export class Chat extends React.Component<ChatProps> {
     this.setState({ gifSearchQuery: data.value });
   };
 
+  getAudioParticipants = () => {
+    const { participants, tsMap } = this.props;
+    // Filter participants who are in audio chat
+    const audioParticipants = participants.filter((p) => p.isVideoChat);
+
+    // Sort by most recent activity (timestamp) descending
+    return audioParticipants.sort((a, b) => {
+      const tsA = tsMap[a.id] || 0;
+      const tsB = tsMap[b.id] || 0;
+      return tsB - tsA;
+    });
+  };
+
+  renderAudioChatSection = () => {
+    const { setupWebRTC, stopWebRTC, getAudioWebRTC, toggleAudioWebRTC } =
+      this.props;
+    const audioParticipants = this.getAudioParticipants();
+    const ourStream = (window as any).watchparty?.ourStream;
+    const isInAudio = Boolean(ourStream);
+    const isMuted = isInAudio && getAudioWebRTC && !getAudioWebRTC();
+
+    return (
+      <div className={styles.audioSection}>
+        {/* Audio chat controls */}
+        <div
+          style={{
+            display: 'flex',
+            gap: '8px',
+            marginBottom: '8px',
+            alignItems: 'center',
+          }}
+        >
+          {!isInAudio ? (
+            <Button
+              color={audioParticipants.length > 0 ? 'green' : 'purple'}
+              icon
+              labelPosition="left"
+              onClick={setupWebRTC}
+              size="small"
+              fluid
+              style={{ flex: 1 }}
+            >
+              <Icon name="microphone" />
+              Join Audio Chat{' '}
+              {audioParticipants.length > 0
+                ? `(${audioParticipants.length})`
+                : ''}
+            </Button>
+          ) : (
+            <>
+              <Button
+                color={isMuted ? 'red' : 'green'}
+                icon
+                onClick={toggleAudioWebRTC}
+                size="small"
+                circular
+                title={isMuted ? 'Unmute' : 'Mute'}
+              >
+                <Icon name={isMuted ? 'microphone slash' : 'microphone'} />
+              </Button>
+              <div
+                style={{
+                  flex: 1,
+                  fontSize: '12px',
+                  color: 'rgba(255, 255, 255, 0.7)',
+                }}
+              >
+                In Audio Chat ({audioParticipants.length})
+              </div>
+              <Button
+                color="red"
+                size="mini"
+                onClick={stopWebRTC}
+                title="Leave Audio Chat"
+              >
+                Leave
+              </Button>
+            </>
+          )}
+        </div>
+
+        {/* Horizontal scrolling participant grid */}
+        {audioParticipants.length > 0 && (
+          <div className={styles.participantGrid}>
+            <div
+              style={{ display: 'inline-flex', gap: '8px', minWidth: '100%' }}
+            >
+              {audioParticipants.map((participant) => (
+                <div
+                  key={participant.id}
+                  className={`${styles.participantCard} ${participant.isMuted ? styles.muted : styles.unmuted}`}
+                >
+                  <div>
+                    <img
+                      src={
+                        this.props.pictureMap[participant.id] ||
+                        getDefaultPicture(
+                          this.props.nameMap[participant.id],
+                          getColorForStringHex(participant.id),
+                        )
+                      }
+                      alt={this.props.nameMap[participant.id] || participant.id}
+                      className={styles.participantAvatar}
+                    />
+                  </div>
+                  <div className={styles.participantName}>
+                    {this.props.nameMap[participant.id] || participant.id}
+                  </div>
+                  <div className={styles.participantStatus}>
+                    <Icon
+                      name={
+                        participant.isMuted ? 'microphone slash' : 'microphone'
+                      }
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   render() {
     return (
       <div
@@ -362,6 +493,7 @@ export class Chat extends React.Component<ChatProps> {
             </Button>
           )}
         </div>
+        {this.renderAudioChatSection()}
         <Separator />
         {this.state.isPickerOpen && (
           <div

@@ -188,3 +188,81 @@
   transform: scale(0);
   transition: all 100ms ease-out !important;
 }
+
+/* Audio Chat Styles */
+.audioSection {
+  padding: 8px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.participantGrid {
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.participantGrid::-webkit-scrollbar {
+  height: 4px;
+}
+
+.participantGrid::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.participantGrid::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+}
+
+.participantCard {
+  display: inline-block;
+  min-width: 60px;
+  text-align: center;
+  padding: 4px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.participantCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.participantCard.muted {
+  border: 2px solid #db2828;
+  background-color: rgba(219, 40, 40, 0.1);
+}
+
+.participantCard.unmuted {
+  border: 2px solid #21ba45;
+  background-color: rgba(33, 186, 69, 0.1);
+}
+
+.participantAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 4px;
+}
+
+.participantName {
+  font-size: 10px;
+  color: white;
+  max-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.participantStatus {
+  font-size: 8px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 2px;
+}

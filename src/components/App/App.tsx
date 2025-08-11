@@ -260,6 +260,7 @@ export default class App extends React.Component<AppProps, AppState> {
   };
 
   chatRef = React.createRef<Chat>();
+  videoChatRef = React.createRef<VideoChat>();
 
   async componentDidMount() {
     document.onfullscreenchange = this.onFullScreenChange;
@@ -2696,6 +2697,7 @@ export default class App extends React.Component<AppProps, AppState> {
                 >
                   {this.state.state === 'connected' && (
                     <VideoChat
+                      ref={this.videoChatRef}
                       socket={this.socket}
                       participants={this.state.participants}
                       nameMap={this.state.nameMap}
@@ -2720,6 +2722,16 @@ export default class App extends React.Component<AppProps, AppState> {
                 ref={this.chatRef}
                 isLiveStream={this.state.isLiveStream}
                 hide={!this.state.showChatColumn}
+                participants={this.state.participants}
+                tsMap={this.state.tsMap}
+                setupWebRTC={() => this.videoChatRef.current?.setupWebRTC()}
+                stopWebRTC={() => this.videoChatRef.current?.stopWebRTC()}
+                getAudioWebRTC={() =>
+                  this.videoChatRef.current?.getAudioWebRTC() || false
+                }
+                toggleAudioWebRTC={() =>
+                  this.videoChatRef.current?.toggleAudioWebRTC()
+                }
               />
             </div>
           </div>
