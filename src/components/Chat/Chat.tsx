@@ -71,13 +71,20 @@ export class Chat extends React.Component<ChatProps> {
       yPosition: 0,
       xPosition: 0,
     },
+    participantGridScrollLeft: 0,
+    showLeftArrow: false,
+    showRightArrow: false,
+    isParticipantGridCollapsed: false,
   };
   messagesRef = React.createRef<HTMLDivElement>();
+  participantGridRef = React.createRef<HTMLDivElement>();
 
   async componentDidMount() {
     this.scrollToBottom();
     this.messagesRef.current?.addEventListener('scroll', this.onScroll);
     init({ data });
+    // Check scroll arrows after initial render
+    setTimeout(() => this.updateScrollArrows(), 200);
   }
 
   componentDidUpdate(prevProps: ChatProps) {
@@ -89,6 +96,11 @@ export class Chat extends React.Component<ChatProps> {
     }
     if (this.props.hide !== prevProps.hide) {
       this.scrollToBottom();
+    }
+
+    // Update scroll arrows when participants change
+    if (prevProps.participants !== this.props.participants) {
+      setTimeout(() => this.updateScrollArrows(), 100);
     }
   }
 
@@ -325,6 +337,45 @@ export class Chat extends React.Component<ChatProps> {
     });
   };
 
+  updateScrollArrows = () => {
+    const grid = this.participantGridRef.current;
+    if (!grid) return;
+
+    const { scrollLeft, scrollWidth, clientWidth } = grid;
+    const showLeftArrow = scrollLeft > 0;
+    const showRightArrow = scrollLeft < scrollWidth - clientWidth - 1;
+
+    this.setState({
+      participantGridScrollLeft: scrollLeft,
+      showLeftArrow,
+      showRightArrow,
+    });
+  };
+
+  handleParticipantGridScroll = () => {
+    this.updateScrollArrows();
+  };
+
+  scrollParticipantGrid = (direction: 'left' | 'right') => {
+    const grid = this.participantGridRef.current;
+    if (!grid) return;
+
+    const scrollAmount = 150; // Pixels to scroll
+    const newScrollLeft =
+      grid.scrollLeft + (direction === 'left' ? -scrollAmount : scrollAmount);
+
+    grid.scrollTo({
+      left: newScrollLeft,
+      behavior: 'smooth',
+    });
+  };
+
+  toggleParticipantGrid = () => {
+    this.setState({
+      isParticipantGridCollapsed: !this.state.isParticipantGridCollapsed,
+    });
+  };
+
   renderAudioChatSection = () => {
     const { setupWebRTC, stopWebRTC, getAudioWebRTC, toggleAudioWebRTC } =
       this.props;
@@ -340,26 +391,52 @@ export class Chat extends React.Component<ChatProps> {
           style={{
             display: 'flex',
             gap: '8px',
-            marginBottom: '8px',
+            marginBottom:
+              audioParticipants.length > 0 &&
+              !this.state.isParticipantGridCollapsed
+                ? '8px'
+                : '0px',
             alignItems: 'center',
           }}
         >
           {!isInAudio ? (
-            <Button
-              color={audioParticipants.length > 0 ? 'green' : 'purple'}
-              icon
-              labelPosition="left"
-              onClick={setupWebRTC}
-              size="small"
-              fluid
-              style={{ flex: 1 }}
-            >
-              <Icon name="microphone" />
-              Join Audio Chat{' '}
-              {audioParticipants.length > 0
-                ? `(${audioParticipants.length})`
-                : ''}
-            </Button>
+            <>
+              <Button
+                color={audioParticipants.length > 0 ? 'green' : 'purple'}
+                icon
+                labelPosition="left"
+                onClick={setupWebRTC}
+                size="small"
+                style={{ flex: 1 }}
+              >
+                <Icon name="microphone" />
+                Join Audio Chat{' '}
+                {audioParticipants.length > 0
+                  ? `(${audioParticipants.length})`
+                  : ''}
+              </Button>
+              {audioParticipants.length > 0 && (
+                <Button
+                  icon
+                  size="small"
+                  onClick={this.toggleParticipantGrid}
+                  title={
+                    this.state.isParticipantGridCollapsed
+                      ? 'Show participants'
+                      : 'Hide participants'
+                  }
+                  className={styles.collapseButton}
+                >
+                  <Icon
+                    name={
+                      this.state.isParticipantGridCollapsed
+                        ? 'angle down'
+                        : 'angle up'
+                    }
+                  />
+                </Button>
+              )}
+            </>
           ) : (
             <>
               <Button
@@ -381,6 +458,27 @@ export class Chat extends React.Component<ChatProps> {
               >
                 In Audio Chat ({audioParticipants.length})
               </div>
+              {audioParticipants.length > 0 && (
+                <Button
+                  icon
+                  size="mini"
+                  onClick={this.toggleParticipantGrid}
+                  title={
+                    this.state.isParticipantGridCollapsed
+                      ? 'Show participants'
+                      : 'Hide participants'
+                  }
+                  className={styles.collapseButton}
+                >
+                  <Icon
+                    name={
+                      this.state.isParticipantGridCollapsed
+                        ? 'angle down'
+                        : 'angle up'
+                    }
+                  />
+                </Button>
+              )}
               <Button
                 color="red"
                 size="mini"
@@ -393,42 +491,89 @@ export class Chat extends React.Component<ChatProps> {
           )}
         </div>
 
-        {/* Horizontal scrolling participant grid */}
+        {/* Horizontal scrolling participant grid with arrows */}
         {audioParticipants.length > 0 && (
-          <div className={styles.participantGrid}>
-            <div
-              style={{ display: 'inline-flex', gap: '8px', minWidth: '100%' }}
-            >
-              {audioParticipants.map((participant) => (
-                <div
-                  key={participant.id}
-                  className={`${styles.participantCard} ${participant.isMuted ? styles.muted : styles.unmuted}`}
+          <div
+            className={`${styles.participantGridContainer} ${
+              this.state.isParticipantGridCollapsed
+                ? styles.participantGridCollapsed
+                : styles.participantGridExpanded
+            }`}
+            style={{ position: 'relative' }}
+          >
+            {/* Left arrow */}
+            {this.state.showLeftArrow &&
+              !this.state.isParticipantGridCollapsed && (
+                <Button
+                  circular
+                  icon
+                  size="mini"
+                  onClick={() => this.scrollParticipantGrid('left')}
+                  className={`${styles.scrollArrow} ${styles.scrollArrowLeft}`}
+                  title="Scroll left"
                 >
-                  <div>
-                    <img
-                      src={
-                        this.props.pictureMap[participant.id] ||
-                        getDefaultPicture(
-                          this.props.nameMap[participant.id],
-                          getColorForStringHex(participant.id),
-                        )
-                      }
-                      alt={this.props.nameMap[participant.id] || participant.id}
-                      className={styles.participantAvatar}
-                    />
+                  <Icon name="chevron left" />
+                </Button>
+              )}
+
+            {/* Right arrow */}
+            {this.state.showRightArrow &&
+              !this.state.isParticipantGridCollapsed && (
+                <Button
+                  circular
+                  icon
+                  size="mini"
+                  onClick={() => this.scrollParticipantGrid('right')}
+                  className={`${styles.scrollArrow} ${styles.scrollArrowRight}`}
+                  title="Scroll right"
+                >
+                  <Icon name="chevron right" />
+                </Button>
+              )}
+
+            <div
+              className={styles.participantGrid}
+              ref={this.participantGridRef}
+              onScroll={this.handleParticipantGridScroll}
+            >
+              <div
+                style={{ display: 'inline-flex', gap: '8px', minWidth: '100%' }}
+              >
+                {audioParticipants.map((participant) => (
+                  <div
+                    key={participant.id}
+                    className={`${styles.participantCard} ${participant.isMuted ? styles.muted : styles.unmuted}`}
+                  >
+                    <div>
+                      <img
+                        src={
+                          this.props.pictureMap[participant.id] ||
+                          getDefaultPicture(
+                            this.props.nameMap[participant.id],
+                            getColorForStringHex(participant.id),
+                          )
+                        }
+                        alt={
+                          this.props.nameMap[participant.id] || participant.id
+                        }
+                        className={styles.participantAvatar}
+                      />
+                    </div>
+                    <div className={styles.participantName}>
+                      {this.props.nameMap[participant.id] || participant.id}
+                    </div>
+                    <div className={styles.participantStatus}>
+                      <Icon
+                        name={
+                          participant.isMuted
+                            ? 'microphone slash'
+                            : 'microphone'
+                        }
+                      />
+                    </div>
                   </div>
-                  <div className={styles.participantName}>
-                    {this.props.nameMap[participant.id] || participant.id}
-                  </div>
-                  <div className={styles.participantStatus}>
-                    <Icon
-                      name={
-                        participant.isMuted ? 'microphone slash' : 'microphone'
-                      }
-                    />
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -436,7 +581,48 @@ export class Chat extends React.Component<ChatProps> {
     );
   };
 
+  // Helper function to determine if messages should be grouped
+  shouldGroupMessages = (
+    currentMsg: ChatMessage,
+    previousMsg: ChatMessage | null,
+  ): boolean => {
+    if (!previousMsg) return false;
+    if (currentMsg.id !== previousMsg.id) return false;
+    if (currentMsg.cmd || previousMsg.cmd) return false; // Don't group system messages
+
+    // Group messages within 2 minutes for tighter grouping
+    const timeDiff =
+      new Date(currentMsg.timestamp).getTime() -
+      new Date(previousMsg.timestamp).getTime();
+    return timeDiff < 2 * 60 * 1000; // 2 minutes in milliseconds
+  };
+
+  // Helper function to determine if we should show a date divider
+  shouldShowDateDivider = (
+    currentMsg: ChatMessage,
+    previousMsg: ChatMessage | null,
+  ): boolean => {
+    if (!previousMsg) return false;
+
+    const currentDate = new Date(currentMsg.timestamp).toDateString();
+    const previousDate = new Date(previousMsg.timestamp).toDateString();
+
+    return currentDate !== previousDate;
+  };
+
   render() {
+    // Process messages for grouping
+    const processedMessages = this.props.chat.map((msg, index) => {
+      const previousMsg = index > 0 ? this.props.chat[index - 1] : null;
+      const isGrouped = this.shouldGroupMessages(msg, previousMsg);
+
+      return {
+        ...msg,
+        isGrouped,
+        showDivider: this.shouldShowDateDivider(msg, previousMsg),
+      };
+    });
+
     return (
       <div
         className={this.props.className}
@@ -447,18 +633,18 @@ export class Chat extends React.Component<ChatProps> {
           minHeight: 0,
           marginTop: 0,
           marginBottom: 0,
-          padding: '8px',
+          backgroundColor: '#1a1d21',
         }}
       >
         <div
-          className={styles.chatContainer}
+          className={styles.slackChatContainer}
           ref={this.messagesRef}
-          style={{ position: 'relative', paddingTop: 13 }}
+          style={{ position: 'relative' }}
         >
-          <Comment.Group>
-            {this.props.chat.map((msg) => (
-              <ChatMessage
-                key={msg.timestamp + msg.id}
+          {processedMessages.map((msg, index) => (
+            <React.Fragment key={msg.timestamp + msg.id}>
+              {msg.showDivider && <div className={styles.slackDivider} />}
+              <SlackChatMessage
                 className={
                   msg.id === this.state.reactionMenu.selectedMsgId &&
                   msg.timestamp === this.state.reactionMenu.selectedMsgTimestamp
@@ -474,10 +660,10 @@ export class Chat extends React.Component<ChatProps> {
                 isChatDisabled={this.props.isChatDisabled}
                 setReactionMenu={this.setReactionMenu}
                 handleReactionClick={this.handleReactionClick}
+                isGrouped={msg.isGrouped}
               />
-            ))}
-            {/* <div ref={this.messagesEndRef} /> */}
-          </Comment.Group>
+            </React.Fragment>
+          ))}
           {!this.state.isNearBottom && (
             <Button
               size="tiny"
@@ -487,6 +673,9 @@ export class Chat extends React.Component<ChatProps> {
                 bottom: 0,
                 display: 'block',
                 margin: '0 auto',
+                backgroundColor: '#2d3235',
+                color: '#ffffff',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
               }}
             >
               Jump to bottom
@@ -663,63 +852,61 @@ export class Chat extends React.Component<ChatProps> {
             xPosition={this.state.reactionMenu.xPosition}
           /> */}
         </CSSTransition>
-        <Form autoComplete="off">
-          <Input
-            inverted
-            fluid
-            onKeyPress={(e: any) => e.key === 'Enter' && this.sendChatMsg()}
-            onChange={this.updateChatMsg}
-            value={this.state.chatMsg}
-            error={this.chatTooLong()}
-            icon
-            disabled={this.props.isChatDisabled}
-            placeholder={
-              this.props.isChatDisabled
-                ? 'The chat was disabled by the room owner.'
-                : 'Enter a message...'
-            }
-          >
-            <input />
-            <Icon
-              onClick={() => {
-                // Add a delay to prevent the click from triggering onClickOutside
-                const curr = this.state.isPickerOpen;
-                setTimeout(() => this.setState({ isPickerOpen: !curr }), 100);
-              }}
-              name={'smile'}
-              inverted
-              circular
-              icon="smile"
-              link
-              disabled={this.props.isChatDisabled}
-              style={{
-                opacity: 1,
-                cursor: 'pointer',
-                marginRight: '32px',
-              }}
-              title="Add emoji"
-            />
-
-            <Icon
-              onClick={() =>
-                this.setState({ isGifPickerOpen: !this.state.isGifPickerOpen })
-              }
-              name="image"
-              inverted
-              circular
-              link
-              disabled={this.props.isChatDisabled}
-              style={{ opacity: 1 }}
-            />
-            {/* <Icon onClick={this.sendChatMsg} name="send" inverted circular link /> */}
-          </Input>
-        </Form>
+        <div className={styles.slackInputContainer}>
+          <div className={styles.slackInputWrapper}>
+            <Form autoComplete="off">
+              <Input
+                fluid
+                onKeyPress={(e: any) => e.key === 'Enter' && this.sendChatMsg()}
+                onChange={this.updateChatMsg}
+                value={this.state.chatMsg}
+                error={this.chatTooLong()}
+                disabled={this.props.isChatDisabled}
+                placeholder={
+                  this.props.isChatDisabled
+                    ? 'The chat was disabled by the room owner.'
+                    : 'Message'
+                }
+                className={styles.slackInput}
+              />
+              <div className={styles.slackInputActions}>
+                <Icon
+                  onClick={() => {
+                    // Add a delay to prevent the click from triggering onClickOutside
+                    const curr = this.state.isPickerOpen;
+                    setTimeout(
+                      () => this.setState({ isPickerOpen: !curr }),
+                      100,
+                    );
+                  }}
+                  name="smile"
+                  link
+                  disabled={this.props.isChatDisabled}
+                  className={styles.slackInputAction}
+                  title="Add emoji"
+                />
+                <Icon
+                  onClick={() =>
+                    this.setState({
+                      isGifPickerOpen: !this.state.isGifPickerOpen,
+                    })
+                  }
+                  name="image"
+                  link
+                  disabled={this.props.isChatDisabled}
+                  className={styles.slackInputAction}
+                  title="Add GIF"
+                />
+              </div>
+            </Form>
+          </div>
+        </div>
       </div>
     );
   }
 }
 
-const ChatMessage = ({
+const SlackChatMessage = ({
   message,
   nameMap,
   pictureMap,
@@ -730,8 +917,9 @@ const ChatMessage = ({
   setReactionMenu,
   handleReactionClick,
   className,
+  isGrouped,
 }: {
-  message: ChatMessage;
+  message: ChatMessage & { isGrouped?: boolean };
   nameMap: StringDict;
   pictureMap: StringDict;
   formatMessage: (cmd: string, msg: string) => React.ReactNode;
@@ -747,198 +935,227 @@ const ChatMessage = ({
   ) => void;
   handleReactionClick: (value: string, id?: string, timestamp?: string) => void;
   className: string;
+  isGrouped?: boolean;
 }) => {
   const { user } = useContext(MetadataContext);
   const { id, timestamp, cmd, msg, system, isSub, reactions, videoTS } =
     message;
-  const spellFull = 5; // the number of people whose names should be written out in full in the reaction popup
+  const spellFull = 5;
+
   return (
-    <Comment className={`${classes.comment} ${className}`}>
-      {id ? (
-        <Comment.Avatar
-          src={
-            pictureMap[id] ||
-            getDefaultPicture(nameMap[id], getColorForStringHex(id))
-          }
-        />
-      ) : null}
-      <Comment.Content>
-        <UserMenu
-          displayName={nameMap[id] || id}
-          timestamp={timestamp}
-          socket={socket}
-          userToManage={id}
-          isChatMessage
-          disabled={!Boolean(owner && owner === user?.uid)}
-          trigger={
-            <Comment.Author
-              title={isSub ? 'WatchParty Plus subscriber' : ''}
-              as="a"
-              className={isSub ? classes.subscriber : styles.light}
-            >
-              {Boolean(system) && 'System'}
-              {nameMap[id] || id}
-            </Comment.Author>
-          }
-        />
-        <Comment.Metadata className={styles.dark}>
-          <div title={new Date(timestamp).toLocaleDateString()}>
-            {new Date(timestamp).toLocaleTimeString()}
-            {Boolean(videoTS) && ' @ '}
-            {formatTimestamp(videoTS)}
-          </div>
-        </Comment.Metadata>
-        <Comment.Text className={styles.light + ' ' + styles.system}>
-          {cmd && formatMessage(cmd, msg)}
-        </Comment.Text>
-        <Linkify
-          componentDecorator={(
-            decoratedHref: string,
-            decoratedText: string,
-            key: string,
-          ) => (
-            <SecureLink href={decoratedHref} key={key}>
-              {decoratedText}
-            </SecureLink>
-          )}
-        >
-          <Comment.Text
-            className={`${styles.light} ${
-              isEmojiString(msg) ? styles.emoji : ''
-            }`}
-          >
-            {!cmd && !msg?.startsWith('![') && msg}
-          </Comment.Text>
-        </Linkify>
-        {msg?.startsWith('![') && (
-          <Markdown
-            children={msg}
-            components={{
-              img: ({ node, ...props }) => (
-                <img style={{ maxWidth: '280px', width: '100%' }} {...props} />
-              ),
-            }}
+    <div
+      className={`${isGrouped ? styles.slackMessageGrouped : styles.slackMessage} ${className}`}
+      style={{ position: 'relative' }}
+    >
+      <div style={{ display: 'flex', alignItems: 'baseline' }}>
+        {/* Avatar or timestamp space for grouped messages */}
+        {!isGrouped && id && (
+          <img
+            src={
+              pictureMap[id] ||
+              getDefaultPicture(nameMap[id], getColorForStringHex(id))
+            }
+            alt={nameMap[id] || id}
+            className={styles.slackAvatar}
+            style={{ alignSelf: 'flex-start' }}
           />
         )}
-        <div className={classes.commentMenu}>
-          <Icon
-            onClick={(e: MouseEvent) => {
-              const viewportOffset = (e.target as any).getBoundingClientRect();
-              setTimeout(() => {
-                setReactionMenu(
-                  true,
-                  id,
-                  timestamp,
-                  viewportOffset.top,
-                  viewportOffset.right,
-                );
-              }, 100);
-            }}
-            name={undefined}
-            inverted
-            link
-            disabled={isChatDisabled}
+
+        {/* Timestamp in left column for grouped messages */}
+        {isGrouped && (
+          <div className={styles.slackLeftTimestamp}>
+            <span
+              className={styles.slackGroupedTimestamp}
+              title={`${new Date(timestamp).toLocaleDateString()} ${new Date(
+                timestamp,
+              ).toLocaleTimeString([], {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true,
+              })}${Boolean(videoTS) ? ` @ ${formatTimestamp(videoTS)}` : ''}`}
+            >
+              {new Date(timestamp).toLocaleTimeString([], {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: false,
+              })}
+            </span>
+          </div>
+        )}
+
+        <div className={styles.slackMessageContent}>
+          {/* Message header - show username only for non-grouped messages */}
+          {!isGrouped && (
+            <div className={styles.slackMessageHeader}>
+              <UserMenu
+                displayName={nameMap[id] || id}
+                timestamp={timestamp}
+                socket={socket}
+                userToManage={id}
+                isChatMessage
+                disabled={!Boolean(owner && owner === user?.uid)}
+                trigger={
+                  <span
+                    className={`${styles.slackUsername} ${
+                      isSub ? styles.slackUsernameSubscriber : ''
+                    }`}
+                  >
+                    {Boolean(system) && 'System'}
+                    {nameMap[id] || id}
+                  </span>
+                }
+              />
+              <span
+                className={styles.slackTimestamp}
+                title={new Date(timestamp).toLocaleDateString()}
+              >
+                {new Date(timestamp).toLocaleTimeString([], {
+                  hour: 'numeric',
+                  minute: '2-digit',
+                  hour12: true,
+                })}
+                {Boolean(videoTS) && ` @ ${formatTimestamp(videoTS)}`}
+              </span>
+            </div>
+          )}
+
+          {/* System message */}
+          {cmd && (
+            <div className={styles.slackSystemMessage}>
+              {formatMessage(cmd, msg)}
+            </div>
+          )}
+
+          {/* Regular message content */}
+          <Linkify
+            componentDecorator={(
+              decoratedHref: string,
+              decoratedText: string,
+              key: string,
+            ) => (
+              <SecureLink href={decoratedHref} key={key}>
+                {decoratedText}
+              </SecureLink>
+            )}
+          >
+            <div
+              className={`${styles.slackMessageText} ${
+                isEmojiString(msg) ? styles.emoji : ''
+              }`}
+            >
+              {!cmd && !msg?.startsWith('![') && msg}
+            </div>
+          </Linkify>
+
+          {/* Image content */}
+          {msg?.startsWith('![') && (
+            <Markdown
+              children={msg}
+              components={{
+                img: ({ node, ...props }) => (
+                  <img
+                    style={{
+                      maxWidth: '280px',
+                      width: '100%',
+                      borderRadius: '8px',
+                      marginTop: '4px',
+                    }}
+                    {...props}
+                  />
+                ),
+              }}
+            />
+          )}
+
+          {/* Reactions */}
+          <div
             style={{
-              opacity: 1,
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              padding: 10,
-              margin: 0,
+              marginTop:
+                reactions && Object.keys(reactions).length > 0 ? '6px' : '0',
             }}
           >
-            <span
-              role="img"
-              aria-label="React"
-              style={{ margin: 0, fontSize: 18 }}
-            >
-              😀
-            </span>
-          </Icon>
-        </div>
-        <TransitionGroup>
-          {Object.keys(reactions ?? []).map((key) =>
-            reactions?.[key].length ? (
-              <CSSTransition
-                key={key}
-                timeout={200}
-                classNames={{
-                  enter: classes['reaction-enter'],
-                  enterActive: classes['reaction-enter-active'],
-                  exit: classes['reaction-exit'],
-                  exitActive: classes['reaction-exit-active'],
-                }}
-                unmountOnExit
-              >
-                <Popup
-                  content={`${reactions[key]
-                    .slice(0, spellFull)
-                    .map((id) => nameMap[id] || 'Unknown')
-                    .concat(
-                      reactions[key].length > spellFull
-                        ? [`${reactions[key].length - spellFull} more`]
-                        : [],
-                    )
-                    .reduce(
-                      (text, value, i, array) =>
-                        text + (i < array.length - 1 ? ', ' : ' and ') + value,
-                    )} reacted.`}
-                  offset={[0, 6]}
-                  trigger={
-                    <div
-                      className={`${classes.reactionContainer} ${
-                        reactions[key].includes(socket.id)
-                          ? classes.highlighted
-                          : ''
-                      }`}
-                      onClick={() =>
-                        handleReactionClick(key, message.id, message.timestamp)
-                      }
-                    >
-                      <span
-                        style={{
-                          fontSize: 17,
-                          position: 'relative',
-                          bottom: 1,
-                        }}
-                      >
-                        {key}
-                      </span>
-                      <SwitchTransition>
-                        <CSSTransition
-                          key={key + '-' + reactions[key].length}
-                          classNames={{
-                            enter: classes['reactionCounter-enter'],
-                            enterActive:
-                              classes['reactionCounter-enter-active'],
-                            exit: classes['reactionCounter-exit'],
-                            exitActive: classes['reactionCounter-exit-active'],
-                          }}
-                          addEndListener={(node, done) =>
-                            node.addEventListener('transitionend', done, false)
+            <TransitionGroup component={null}>
+              {Object.keys(reactions ?? []).map((key) =>
+                reactions?.[key].length ? (
+                  <CSSTransition
+                    key={key}
+                    timeout={200}
+                    classNames={{
+                      enter: classes['reaction-enter'],
+                      enterActive: classes['reaction-enter-active'],
+                      exit: classes['reaction-exit'],
+                      exitActive: classes['reaction-exit-active'],
+                    }}
+                    unmountOnExit
+                  >
+                    <Popup
+                      content={`${reactions[key]
+                        .slice(0, spellFull)
+                        .map((id) => nameMap[id] || 'Unknown')
+                        .concat(
+                          reactions[key].length > spellFull
+                            ? [`${reactions[key].length - spellFull} more`]
+                            : [],
+                        )
+                        .reduce(
+                          (text, value, i, array) =>
+                            text +
+                            (i < array.length - 1 ? ', ' : ' and ') +
+                            value,
+                        )} reacted.`}
+                      offset={[0, 6]}
+                      trigger={
+                        <div
+                          className={`${styles.slackReactionContainer} ${
+                            reactions[key].includes(socket.id)
+                              ? styles.highlighted
+                              : ''
+                          }`}
+                          onClick={() =>
+                            handleReactionClick(
+                              key,
+                              message.id,
+                              message.timestamp,
+                            )
                           }
-                          unmountOnExit
                         >
-                          <span
-                            className={classes.reactionCounter}
-                            style={{
-                              color: 'rgba(255, 255, 255, 0.85)',
-                              marginLeft: 3,
-                            }}
-                          >
+                          <span className={styles.slackReactionEmoji}>
+                            {key}
+                          </span>
+                          <span className={styles.slackReactionCount}>
                             {reactions[key].length}
                           </span>
-                        </CSSTransition>
-                      </SwitchTransition>
-                    </div>
-                  }
-                />
-              </CSSTransition>
-            ) : null,
-          )}
-        </TransitionGroup>
-      </Comment.Content>
-    </Comment>
+                        </div>
+                      }
+                    />
+                  </CSSTransition>
+                ) : null,
+              )}
+            </TransitionGroup>
+          </div>
+        </div>
+      </div>
+
+      {/* React button */}
+      <div
+        className={styles.slackReactButton}
+        onClick={(e: React.MouseEvent) => {
+          const viewportOffset = (e.target as any).getBoundingClientRect();
+          setTimeout(() => {
+            setReactionMenu(
+              true,
+              id,
+              timestamp,
+              viewportOffset.top,
+              viewportOffset.right,
+            );
+          }, 100);
+        }}
+        title="Add reaction"
+      >
+        <span style={{ fontSize: '16px' }}>😀</span>
+      </div>
+    </div>
   );
 };
 
