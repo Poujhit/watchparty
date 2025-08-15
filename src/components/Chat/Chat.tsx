@@ -430,8 +430,8 @@ export class Chat extends React.Component<ChatProps> {
                   <Icon
                     name={
                       this.state.isParticipantGridCollapsed
-                        ? 'angle down'
-                        : 'angle up'
+                        ? 'angle up'
+                        : 'angle down'
                     }
                   />
                 </Button>
@@ -443,11 +443,15 @@ export class Chat extends React.Component<ChatProps> {
                 color={isMuted ? 'red' : 'green'}
                 icon
                 onClick={toggleAudioWebRTC}
-                size="small"
+                size="medium"
                 circular
                 title={isMuted ? 'Unmute' : 'Mute'}
+                className={`${styles.micButton} ${isMuted ? styles.micButtonMuted : styles.micButtonUnmuted}`}
               >
-                <Icon name={isMuted ? 'microphone slash' : 'microphone'} />
+                <Icon
+                  name={isMuted ? 'microphone slash' : 'microphone'}
+                  className={styles.micIcon}
+                />
               </Button>
               <div
                 style={{
@@ -473,8 +477,8 @@ export class Chat extends React.Component<ChatProps> {
                   <Icon
                     name={
                       this.state.isParticipantGridCollapsed
-                        ? 'angle down'
-                        : 'angle up'
+                        ? 'angle up'
+                        : 'angle down'
                     }
                   />
                 </Button>
