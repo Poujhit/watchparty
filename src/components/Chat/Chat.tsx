@@ -965,29 +965,32 @@ const SlackChatMessage = ({
           />
         )}
 
-        {/* Timestamp in left column for grouped messages */}
+        {/* Empty space for grouped messages to maintain alignment */}
         {isGrouped && (
           <div className={styles.slackLeftTimestamp}>
-            <span
-              className={styles.slackGroupedTimestamp}
-              title={`${new Date(timestamp).toLocaleDateString()} ${new Date(
-                timestamp,
-              ).toLocaleTimeString([], {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true,
-              })}${Boolean(videoTS) ? ` @ ${formatTimestamp(videoTS)}` : ''}`}
-            >
-              {new Date(timestamp).toLocaleTimeString([], {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: false,
-              })}
-            </span>
+            {/* Empty - timestamp moved to message content */}
           </div>
         )}
 
         <div className={styles.slackMessageContent}>
+          {/* Timestamp header for grouped messages */}
+          {isGrouped && (
+            <div className={styles.slackGroupedTimestampHeader}>
+              <span className={styles.slackTimeInline}>
+                {new Date(timestamp).toLocaleTimeString([], {
+                  hour: 'numeric',
+                  minute: '2-digit',
+                  hour12: true,
+                })}
+              </span>
+              {Boolean(videoTS) && (
+                <span className={styles.slackVideoTimestampInline}>
+                  {` @ ${formatTimestamp(videoTS)}`}
+                </span>
+              )}
+            </div>
+          )}
+
           {/* Message header - show username only for non-grouped messages */}
           {!isGrouped && (
             <div className={styles.slackMessageHeader}>
@@ -1018,7 +1021,11 @@ const SlackChatMessage = ({
                   minute: '2-digit',
                   hour12: true,
                 })}
-                {Boolean(videoTS) && ` @ ${formatTimestamp(videoTS)}`}
+                {Boolean(videoTS) && (
+                  <span className={styles.slackVideoTimestampInline}>
+                    {` @ ${formatTimestamp(videoTS)}`}
+                  </span>
+                )}
               </span>
             </div>
           )}
