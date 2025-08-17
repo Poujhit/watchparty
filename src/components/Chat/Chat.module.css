@@ -108,7 +108,8 @@
 }
 
 .slackUsername {
-  font-weight: 700 !important;
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 600 !important;
   color: #ffffff !important;
   font-size: 15px !important;
   line-height: 1.2 !important;
@@ -138,6 +139,7 @@
 }
 
 .slackTimestamp {
+  font-family: 'Inter', sans-serif !important;
   font-size: 12px !important;
   color: #9ca3af !important;
   font-weight: 400 !important;
@@ -156,6 +158,7 @@
 }
 
 .slackGroupedTimestamp {
+  font-family: 'Inter', sans-serif !important;
   font-size: 11px !important;
   color: #9ca3af !important;
   font-weight: 400 !important;
@@ -171,7 +174,49 @@
   opacity: 1;
 }
 
+.slackVideoTimestamp {
+  font-size: 11px !important;
+  color: #fbbf24 !important;
+  font-weight: 500 !important;
+  margin: 0 !important;
+  line-height: 1.2 !important;
+  opacity: 1;
+  text-align: center;
+  background: rgba(251, 191, 36, 0.1);
+  padding: 1px 4px;
+  border-radius: 3px;
+  margin-top: 1px;
+}
+
+.slackVideoTimestampInline {
+  font-family: 'Inter', sans-serif !important;
+  color: #fbbf24 !important;
+  font-weight: 500 !important;
+  background: rgba(251, 191, 36, 0.1);
+  padding: 1px 4px;
+  border-radius: 3px;
+  margin-left: 4px;
+}
+
+.slackGroupedTimestampHeader {
+  font-size: 11px;
+  opacity: 0.7;
+  margin-bottom: 2px;
+  transition: opacity 0.15s ease;
+}
+
+.slackMessageGrouped:hover .slackGroupedTimestampHeader {
+  opacity: 1;
+}
+
+.slackTimeInline {
+  font-family: 'Inter', sans-serif !important;
+  color: #9ca3af !important;
+  font-weight: 400 !important;
+}
+
 .slackMessageText {
+  font-family: 'Inter', sans-serif !important;
   color: #e5e7eb !important;
   font-size: 15px !important;
   line-height: 1.5 !important;
@@ -189,6 +234,7 @@
 }
 
 .slackSystemMessage {
+  font-family: 'Inter', sans-serif !important;
   font-size: 13px !important;
   color: #9ca3af !important;
   font-style: italic;
